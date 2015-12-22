@@ -58,11 +58,12 @@ public final class ExceptionsLogger {
      * @return The result of call
      * @throws Throwable If something goes wrong inside
      */
-    @Around(
-        // @checkstyle StringLiteralsConcatenation (2 lines)
-        "execution(* * (..))"
-        + " && @annotation(com.jcabi.aspects.LogExceptions)"
-    )
+    @Around
+        (
+            // @checkstyle StringLiteralsConcatenation (2 lines)
+            "execution(* * (..))"
+            + " && @annotation(com.jcabi.aspects.LogExceptions)"
+        )
     @SuppressWarnings("PMD.AvoidCatchingThrowable")
     public Object wrap(final ProceedingJoinPoint point) throws Throwable {
         try {
@@ -70,7 +71,7 @@ public final class ExceptionsLogger {
         // @checkstyle IllegalCatch (1 line)
         } catch (final Throwable ex) {
             Logger.warn(
-                JoinPointUtils.targetize(point),
+                new ImprovedJoinPoint(point).targetize(),
                 "%[exception]s",
                 ex
             );

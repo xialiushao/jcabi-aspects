@@ -123,20 +123,21 @@ public final class MethodValidator {
      *
      * @param point Join point
      * @param result Result of the method
-     * @checkstyle LineLength (4 lines)
      * @since 0.7.11
      */
-    @AfterReturning(
-        pointcut = "execution(@(javax.validation.* || javax.validation.constraints.*) * *(..))",
-        returning = "result"
-    )
+    @AfterReturning
+        (
+            // @checkstyle LineLength (1 line)
+            pointcut = "execution(@(javax.validation.* || javax.validation.constraints.*) * *(..))",
+            returning = "result"
+        )
     public void after(final JoinPoint point, final Object result) {
         this.checkForViolations(
             this.validator
                 .forExecutables()
                 .validateReturnValue(
                     point.getThis(),
-                    JoinPointUtils.currentMethod(point),
+                    new ImprovedJoinPoint(point).currentMethod(),
                     result
                 )
         );
@@ -149,7 +150,7 @@ public final class MethodValidator {
      * @param args Parameters of the method
      */
     private void validateMethod(final Object object, final Method method,
-        final Object[] args) {
+        final Object... args) {
         this.checkForViolations(
             this.validator
                 .forExecutables()
@@ -167,7 +168,7 @@ public final class MethodValidator {
      * @param args Parameters of the method
      */
     private void validateConstructor(final Constructor<Object> ctr,
-        final Object[] args) {
+        final Object... args) {
         this.checkForViolations(
             this.validator
                 .forExecutables()

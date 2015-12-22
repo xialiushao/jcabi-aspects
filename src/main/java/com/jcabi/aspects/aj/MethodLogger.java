@@ -58,24 +58,27 @@ import org.aspectj.lang.reflect.MethodSignature;
  * @checkstyle IllegalThrows (500 lines)
  */
 @Aspect
-@SuppressWarnings({
-    "PMD.AvoidCatchingThrowable",
-    "PMD.TooManyMethods",
-    "PMD.CyclomaticComplexity"
-})
+@SuppressWarnings
+    (
+        {
+            "PMD.AvoidCatchingThrowable",
+            "PMD.TooManyMethods",
+            "PMD.CyclomaticComplexity"
+        }
+    )
 public final class MethodLogger {
 
     /**
      * Currently running methods.
      */
-    private final transient Set<Marker> running =
-        new ConcurrentSkipListSet<Marker>();
+    private final transient Set<Marker> running;
 
     /**
      * Public ctor.
      */
     @SuppressWarnings("PMD.DoNotUseThreads")
     public MethodLogger() {
+        this.running = new ConcurrentSkipListSet<Marker>();
         final ScheduledExecutorService monitor =
             Executors.newSingleThreadScheduledExecutor(
                 new NamedThreads(
@@ -117,15 +120,16 @@ public final class MethodLogger {
      * @return The result of call
      * @throws Throwable If something goes wrong inside
      */
-    @Around(
-        // @checkstyle StringLiteralsConcatenation (7 lines)
-        "execution(public * (@com.jcabi.aspects.Loggable *).*(..))"
-        + " && !execution(String *.toString())"
-        + " && !execution(int *.hashCode())"
-        + " && !execution(boolean *.canEqual(Object))"
-        + " && !execution(boolean *.equals(Object))"
-        + " && !cflow(call(com.jcabi.aspects.aj.MethodLogger.new()))"
-    )
+    @Around
+        (
+            // @checkstyle StringLiteralsConcatenation (7 lines)
+            "execution(public * (@com.jcabi.aspects.Loggable *).*(..))"
+            + " && !execution(String *.toString())"
+            + " && !execution(int *.hashCode())"
+            + " && !execution(boolean *.canEqual(Object))"
+            + " && !execution(boolean *.equals(Object))"
+            + " && !cflow(call(com.jcabi.aspects.aj.MethodLogger.new()))"
+        )
     public Object wrapClass(final ProceedingJoinPoint point) throws Throwable {
         final Method method =
             MethodSignature.class.cast(point.getSignature()).getMethod();
@@ -152,11 +156,12 @@ public final class MethodLogger {
      * @return The result of call
      * @throws Throwable If something goes wrong inside
      */
-    @Around(
-        // @checkstyle StringLiteralsConcatenation (2 lines)
-        "(execution(* *(..)) || initialization(*.new(..)))"
-        + " && @annotation(com.jcabi.aspects.Loggable)"
-    )
+    @Around
+        (
+            // @checkstyle StringLiteralsConcatenation (2 lines)
+            "(execution(* *(..)) || initialization(*.new(..)))"
+            + " && @annotation(com.jcabi.aspects.Loggable)"
+        )
     @SuppressWarnings("PMD.AvoidCatchingThrowable")
     public Object wrapMethod(final ProceedingJoinPoint point) throws Throwable {
         final Method method =
@@ -187,9 +192,9 @@ public final class MethodLogger {
         final MethodLogger.Marker marker =
             new MethodLogger.Marker(point, annotation);
         this.running.add(marker);
+        int level = annotation.value();
         try {
             final Object logger = this.logger(method, annotation.name());
-            int level = annotation.value();
             if (annotation.prepend()) {
                 LogHelper.log(
                     level,
@@ -223,7 +228,7 @@ public final class MethodLogger {
                 && !ex.getClass().isAnnotationPresent(Loggable.Quiet.class)) {
                 final StackTraceElement trace = ex.getStackTrace()[0];
                 LogHelper.log(
-                    Loggable.ERROR,
+                    level,
                     method.getDeclaringClass(),
                     Logger.format(
                         "%s: thrown %s out of %s#%s[%d] in %[nano]s",
@@ -362,7 +367,7 @@ public final class MethodLogger {
      * @param trace Array of stacktrace elements
      * @return The text
      */
-    private static String textualize(final StackTraceElement[] trace) {
+    private static String textualize(final StackTraceElement... trace) {
         final StringBuilder text = new StringBuilder();
         for (int pos = 0; pos < trace.length; ++pos) {
             if (text.length() > 0) {
@@ -388,16 +393,16 @@ public final class MethodLogger {
         /**
          * When the method was started, in milliseconds.
          */
-        private final transient long started = System.currentTimeMillis();
+        private final transient long started;
         /**
          * Which monitoring cycle was logged recently.
          */
-        private final transient AtomicInteger logged = new AtomicInteger();
+        private final transient AtomicInteger logged;
         /**
          * The thread it's running in.
          */
         @SuppressWarnings("PMD.DoNotUseThreads")
-        private final transient Thread thread = Thread.currentThread();
+        private final transient Thread thread;
         /**
          * Joint point.
          */
@@ -412,8 +417,11 @@ public final class MethodLogger {
          * @param annt Annotation
          */
         protected Marker(final ProceedingJoinPoint pnt, final Loggable annt) {
+            this.started = System.currentTimeMillis();
+            this.logged = new AtomicInteger();
             this.point = pnt;
             this.annotation = annt;
+            this.thread = Thread.currentThread();
         }
         /**
          * Monitor it's status and log the problem, if any.

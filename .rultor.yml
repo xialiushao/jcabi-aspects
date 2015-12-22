@@ -28,15 +28,13 @@ deploy:
     mvn clean
     pdd --source=$(pwd) --verbose --file=jcabi-aspects.xml
     s3cmd --no-progress put jcabi-aspects.xml --config=../s3cfg s3://pdd.teamed.io/jcabi-aspects.xml
-  commanders:
-  - yegor256
 env:
   MAVEN_OPTS: -XX:MaxPermSize=256m -Xmx1g
 release:
   script: |-
-    mvn versions:set "-DnewVersion=${tag}"
+    mvn versions:set "-DnewVersion=${tag}" -e
     git commit -am "${tag}"
     mvn clean deploy -Pqulice -Psonatype -Pjcabi --errors --settings ../settings.xml
-    mvn clean site-deploy -Psite --errors --settings ../settings.xml
+    mvn clean site-deploy -Psite --errors -Pjcabi --settings ../settings.xml
   commanders:
   - yegor256
